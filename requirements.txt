@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+PyPDF2
+python-docx
+spacy
+groq
+fpdf2
+python-dotenv
+flask
+flask_cors
