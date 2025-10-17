@@ -7,7 +7,6 @@ import os, json, re
 from config import Config
 from models import db, ResumeAnalysis
 from utils import (
-    compute_file_hash,
     extract_text_from_file,
     validate_resume_content,
 )
@@ -36,15 +35,6 @@ def analyze_resume():
     if not resume_file.filename:
         return jsonify({"error": "No selected file"}), 400
 
-    # --- Compute hash and check DB ---
-    # file_hash = compute_file_hash(resume_file)
-    # existing_entry = ResumeAnalysis.query.filter_by(file_hash=file_hash).first()
-    # if existing_entry:
-    #     return jsonify({
-    #         "message": "This resume has already been analyzed.",
-    #         "analysis_results": existing_entry.analysis_results,
-    #         "structured_findings": json.loads(existing_entry.structured_findings)
-    #     })
 
     # --- Extract and validate ---
     file_text = extract_text_from_file(resume_file)
@@ -58,6 +48,7 @@ def analyze_resume():
     if existing_entry:
         return jsonify({
         "message": "This resume has already been analyzed (same content).",
+        "normalized_text": normalized_text,
         "analysis_results": existing_entry.analysis_results,
         "structured_findings": json.loads(existing_entry.structured_findings)
     })
@@ -97,7 +88,10 @@ def analyze_resume():
     db.session.add(new_entry)
     db.session.commit()
 
+
+    print(type(normalized_text))
     return jsonify({
+        "normalized_text": normalized_text,
         "analysis_results": response_content,
         "structured_findings": structured_findings
     })
