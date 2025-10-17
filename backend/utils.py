@@ -3,13 +3,13 @@ from werkzeug.datastructures import FileStorage
 import PyPDF2
 from docx import Document
 
-def compute_file_hash(file_object):
-    hasher = hashlib.sha256()
-    file_object.seek(0)
-    while chunk := file_object.read(8192):
-        hasher.update(chunk)
-    file_object.seek(0)
-    return hasher.hexdigest()
+# def compute_file_hash(file_object):
+#     hasher = hashlib.sha256()
+#     file_object.seek(0)
+#     while chunk := file_object.read(8192):
+#         hasher.update(chunk)
+#     file_object.seek(0)
+#     return hasher.hexdigest()
 
 def extract_text_from_file(file_object):
     text = ""
