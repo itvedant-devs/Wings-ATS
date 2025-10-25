@@ -1,3 +1,117 @@
+# from flask import Flask, request, jsonify
+# from flask_cors import CORS
+# from werkzeug.datastructures import FileStorage
+# from flask_sqlalchemy import SQLAlchemy
+# import os, json, re
+
+# from config import Config
+# from models import db, ResumeAnalysis
+# from utils import (
+#     extract_text_from_file,
+#     validate_resume_content,
+# )
+# from analysis import perform_structured_analysis
+# from groq_client import client, get_groq_response, nlp_model
+
+# # --- Flask App Setup ---
+# app = Flask(__name__)
+# app.config.from_object(Config)
+# CORS(app)
+# db.init_app(app)
+
+# with app.app_context():
+#     db.create_all()
+
+# # --- API Endpoint ---
+# @app.route('/analyze_resume', methods=['POST'])
+# def analyze_resume():
+#     if 'resume' not in request.files:
+#         return jsonify({"error": "No resume file provided"}), 400
+
+#     resume_file = request.files['resume']
+#     target_job_role = request.form.get('target_job_role', '').strip()
+#     job_description = request.form.get('job_description', '').strip()
+
+#     if not resume_file.filename:
+#         return jsonify({"error": "No selected file"}), 400
+
+#     # --- Compute hash and check DB ---
+#     # file_hash = compute_file_hash(resume_file)
+#     # existing_entry = ResumeAnalysis.query.filter_by(file_hash=file_hash).first()
+#     # if existing_entry:
+#     #     return jsonify({
+#     #         "message": "This resume has already been analyzed.",
+#     #         "analysis_results": existing_entry.analysis_results,
+#     #         "structured_findings": json.loads(existing_entry.structured_findings)
+#     #     })
+
+#     # --- Extract and validate ---
+#     file_text = extract_text_from_file(resume_file)
+#     if not file_text:
+#         return jsonify({"error": "Failed to extract text from resume"}), 500
+    
+#     normalized_text = re.sub(r"\s+", " ", file_text.strip().lower())
+#     # --- Check DB for duplicate text ---
+#     existing_entry = ResumeAnalysis.query.filter(ResumeAnalysis.resume_text == normalized_text).first()
+
+#     if existing_entry:
+#         return jsonify({
+#         "message": "This resume has already been analyzed (same content).",
+#         "normalized_text": normalized_text,
+#         "analysis_results": existing_entry.analysis_results,
+#         "structured_findings": json.loads(existing_entry.structured_findings)
+#     })
+
+#     is_valid, validation_message = validate_resume_content(file_text)
+#     if not is_valid:
+#         return jsonify({"error": validation_message}), 400
+
+#     if not nlp_model:
+#         return jsonify({"error": "NLP model not loaded"}), 500
+
+#     structured_findings = perform_structured_analysis(file_text, job_description, nlp_model, target_job_role)
+
+#     analysis_prompt_path = os.path.join(os. path.dirname(__file__), "analysis_prompt.txt")
+#     try:
+#         with open(analysis_prompt_path, encoding="utf-8") as f:
+#             prompt_template = f.read()
+#     except FileNotFoundError:
+#         prompt_template = "You are an expert ATS and career advisor..."
+
+#     response_content = get_groq_response(file_text, job_description, prompt_template, structured_findings, target_job_role)
+
+#     try:
+#         response_json = json.loads(response_content)
+#     except json.JSONDecodeError:
+#         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
+
+#     # --- Store results in DB ---
+#     new_entry = ResumeAnalysis(
+#         file_name=resume_file.filename,   # ✅ Added here
+#         resume_text=normalized_text,
+#         structured_findings=json.dumps(structured_findings),
+#         analysis_results=response_content,
+#         score=response_json.get("score", 0),
+#         quick_fixes=", ".join(response_json.get("quick_fixes", []))
+#     )
+#     db.session.add(new_entry)
+#     db.session.commit()
+
+
+#     print(type(normalized_text))
+#     return jsonify({
+#         "normalized_text": normalized_text,
+#         "analysis_results": response_content,
+#         "structured_findings": structured_findings
+#     })
+
+# if __name__ == '__main__':
+#     app.run(debug=True, port=5000)
+
+
+
+
+# new code ---------------------------------------------------------------------------------
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.datastructures import FileStorage
@@ -5,13 +119,14 @@ from flask_sqlalchemy import SQLAlchemy
 import os, json, re
 
 from config import Config
-from models import db, ResumeAnalysis
+from models import db, Meta  # your existing table model
 from utils import (
     extract_text_from_file,
     validate_resume_content,
 )
 from analysis import perform_structured_analysis
 from groq_client import client, get_groq_response, nlp_model
+
 
 # --- Flask App Setup ---
 app = Flask(__name__)
@@ -22,37 +137,65 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
+
 # --- API Endpoint ---
 @app.route('/analyze_resume', methods=['POST'])
 def analyze_resume():
+    # --- Get user_id (mandatory) ---
+    user_id_str = request.form.get("user_id")
+    if not user_id_str:
+        return jsonify({"error": "No user_id provided"}), 400
+
+    try:
+        user_id = int(user_id_str)
+    except ValueError:
+        return jsonify({"error": "Invalid user_id, must be an integer"}), 400
+
+    # --- Get resume file (mandatory) ---
     if 'resume' not in request.files:
         return jsonify({"error": "No resume file provided"}), 400
 
     resume_file = request.files['resume']
-    target_job_role = request.form.get('target_job_role', '').strip()
-    job_description = request.form.get('job_description', '').strip()
-
     if not resume_file.filename:
         return jsonify({"error": "No selected file"}), 400
 
+    # Optional: get job role and description if provided
+    target_job_role = request.form.get('target_job_role', '').strip()
+    job_description = request.form.get('job_description', '').strip()
 
-    # --- Extract and validate ---
+    # --- Extract and normalize resume text ---
     file_text = extract_text_from_file(resume_file)
     if not file_text:
         return jsonify({"error": "Failed to extract text from resume"}), 500
-    
+
     normalized_text = re.sub(r"\s+", " ", file_text.strip().lower())
-    # --- Check DB for duplicate text ---
-    existing_entry = ResumeAnalysis.query.filter(ResumeAnalysis.resume_text == normalized_text).first()
 
+    # --- Check if record exists for user ---
+    existing_entry = Meta.query.filter_by(
+        key=user_id, type="users", sub_type="resume_analysis_results"
+    ).first()
+
+    existing_value = []
     if existing_entry:
-        return jsonify({
-        "message": "This resume has already been analyzed (same content).",
-        "normalized_text": normalized_text,
-        "analysis_results": existing_entry.analysis_results,
-        "structured_findings": json.loads(existing_entry.structured_findings)
-    })
+        try:
+            existing_value = json.loads(existing_entry.value)
+        except Exception:
+            existing_value = []
 
+        # ✅ Check if same resume already exists
+        for record in existing_value:
+            if record.get("normalized_text") == normalized_text:
+                # Return stored score & analysis, DO NOT push duplicate
+                return jsonify({
+                    "message": "This resume has already been analyzed (same content).",
+                    "analysis_results": record.get("analysis_results"),
+                    "structured_findings": record.get("structured_findings"),
+                    "score": record.get("score"),
+                    "quick_fixes": record.get("quick_fixes"),
+                    "total_stored": len(existing_value)
+                })
+
+    # --- Validate resume ---
     is_valid, validation_message = validate_resume_content(file_text)
     if not is_valid:
         return jsonify({"error": validation_message}), 400
@@ -60,8 +203,10 @@ def analyze_resume():
     if not nlp_model:
         return jsonify({"error": "NLP model not loaded"}), 500
 
+    # --- Structured analysis ---
     structured_findings = perform_structured_analysis(file_text, job_description, nlp_model, target_job_role)
 
+    # --- Get prompt template ---
     analysis_prompt_path = os.path.join(os.path.dirname(__file__), "analysis_prompt.txt")
     try:
         with open(analysis_prompt_path, encoding="utf-8") as f:
@@ -69,6 +214,7 @@ def analyze_resume():
     except FileNotFoundError:
         prompt_template = "You are an expert ATS and career advisor..."
 
+    # --- Get AI response ---
     response_content = get_groq_response(file_text, job_description, prompt_template, structured_findings, target_job_role)
 
     try:
@@ -76,27 +222,51 @@ def analyze_resume():
     except json.JSONDecodeError:
         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
 
-    # --- Store results in DB ---
-    new_entry = ResumeAnalysis(
-        file_name=resume_file.filename,   # ✅ Added here
-        resume_text=normalized_text,
-        structured_findings=json.dumps(structured_findings),
-        analysis_results=response_content,
-        score=response_json.get("score", 0),
-        quick_fixes=", ".join(response_json.get("quick_fixes", []))
-    )
-    db.session.add(new_entry)
-    db.session.commit()
-
-
-    print(type(normalized_text))
-    return jsonify({
+    # --- Build JSON payload ---
+    response_payload = {
         "normalized_text": normalized_text,
         "analysis_results": response_content,
-        "structured_findings": structured_findings
+        "structured_findings": structured_findings,
+        "file_name": resume_file.filename,
+        "score": response_json.get("score", 0),
+        "quick_fixes": response_json.get("quick_fixes", [])
+    }
+
+    # --- Append new record and maintain max 10 (FIFO) ---
+    existing_value.append(response_payload)
+    if len(existing_value) > 10:
+        existing_value = existing_value[-10:]  # keep only latest 10
+
+    # --- Save to DB ---
+    if existing_entry:
+        existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
+        print("old data")
+    else:
+        new_entry = Meta(
+            key=user_id,
+            value=json.dumps(existing_value, ensure_ascii=False),
+            type="users",
+            sub_type="resume_analysis_results"
+        )
+        db.session.add(new_entry)
+        print("new data")
+
+    db.session.commit()
+    
+
+    # --- Return latest analysis result ---
+    return jsonify({
+        "message": "New resume analyzed successfully.",
+        "analysis_results": response_content,
+        "structured_findings": structured_findings,
+        "score": response_json.get("score", 0),
+        "quick_fixes": response_json.get("quick_fixes", []),
+        "total_stored": len(existing_value)
     })
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
+
 
 
