@@ -69,8 +69,17 @@ def analyze_resume():
             existing_value = []
 
         # ✅ Check if same resume already exists
-        for record in existing_value:
+        for i, record in enumerate(existing_value):
             if record.get("normalized_text") == normalized_text:
+
+                # --- Move this record to the end (latest position) ---
+                existing_value.append(existing_value.pop(i))
+
+                # --- Update DB (reorder queue) ---
+                existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
+                db.session.commit()
+
+                
                 # Return stored score & analysis, DO NOT push duplicate
                 return jsonify({
                     "message": "This resume has already been analyzed (same content).",
@@ -126,7 +135,6 @@ def analyze_resume():
     # --- Save to DB ---
     if existing_entry:
         existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
-        print("old data")
     else:
         new_entry = Meta(
             key=user_id,
@@ -135,7 +143,6 @@ def analyze_resume():
             sub_type="resume_analysis_results"
         )
         db.session.add(new_entry)
-        print("new data")
 
     db.session.commit()
     
