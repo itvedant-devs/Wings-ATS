@@ -1,3 +1,5 @@
+import hashlib
+import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.datastructures import FileStorage
@@ -5,13 +7,24 @@ from flask_sqlalchemy import SQLAlchemy
 import os, json, re
 
 from config import Config
-from models import db, Meta  # your existing table model
+from models import db, Meta,User # your existing table model
 from utils import (
     extract_text_from_file,
     validate_resume_content,
 )
 from analysis import perform_structured_analysis
 from groq_client import client, get_groq_response, nlp_model
+
+
+
+# --- Helper Function: PHP-like uniqid(true) ---
+def uniqid(prefix="", more_entropy=False):
+    """Mimic PHP's uniqid(true) using time-based microseconds"""
+    mtime = time.time()  # current time (float seconds)
+    uniq = f"{prefix}{int(mtime * 1000000):x}"  # microseconds → hex string
+    if more_entropy:
+        uniq += f"{hashlib.md5(str(mtime).encode()).hexdigest()[:8]}"
+    return uniq
 
 
 # --- Flask App Setup ---
@@ -56,6 +69,21 @@ def analyze_resume():
 
     normalized_text = re.sub(r"\s+", " ", file_text.strip().lower())
 
+
+    # ✅ Fetch user's first name from DB
+    user = User.query.filter_by(id=user_id).first()
+    first_name = ""
+    if user and user.first_name:
+        first_name = re.sub(r"\s+", "", user.first_name).lower()
+
+    # ✅ Generate encrypted/unique resume file name
+    # Get file extension safely
+    _, file_extension = os.path.splitext(resume_file.filename)
+    file_extension = file_extension.lstrip('.')  # remove leading dot
+    unique_id = uniqid(more_entropy=True)
+    encrypted_filename = f"{first_name}{unique_id}{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
+
+
     # --- Check if record exists for user ---
     existing_entry = Meta.query.filter_by(
         key=user_id, type="users", sub_type="resume_analysis_results"
@@ -87,6 +115,7 @@ def analyze_resume():
                     "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
+                    "encrypted_file_name": record.get("encrypted_file_name"),  # ✅ include here
                     "total_stored": len(existing_value)
                 })
 
@@ -123,6 +152,7 @@ def analyze_resume():
         "analysis_results": response_content,
         "structured_findings": structured_findings,
         "file_name": resume_file.filename,
+        "encrypted_file_name": encrypted_filename,  # ✅ new field
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", [])
     }
@@ -154,7 +184,9 @@ def analyze_resume():
         "structured_findings": structured_findings,
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", []),
-        "total_stored": len(existing_value)
+        "total_stored": len(existing_value),
+        "encrypted_file_name": encrypted_filename  # ✅ included in response
+
     })
 
 
