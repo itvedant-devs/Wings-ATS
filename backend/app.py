@@ -5,7 +5,8 @@ from flask_cors import CORS
 from werkzeug.datastructures import FileStorage
 from flask_sqlalchemy import SQLAlchemy
 import os, json, re
-
+import pymysql   # 👈 Add this
+pymysql.install_as_MySQLdb()  # 👈 And 
 from config import Config
 from models import db, Meta,User # your existing table model
 from utils import (
@@ -110,7 +111,7 @@ def analyze_resume():
                 
                 # Return stored score & analysis, DO NOT push duplicate
                 return jsonify({
-                    "message": "This resume has already been analyzed (same content).",
+                    "backend_message": "This resume has already been analyzed (same content).",
                     "analysis_results": record.get("analysis_results"),
                     "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
@@ -179,7 +180,7 @@ def analyze_resume():
 
     # --- Return latest analysis result ---
     return jsonify({
-        "message": "New resume analyzed successfully.",
+        "backend_message": "New resume analyzed successfully.",
         "analysis_results": response_content,
         "structured_findings": structured_findings,
         "score": response_json.get("score", 0),
@@ -191,7 +192,7 @@ def analyze_resume():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)
 
 
 
