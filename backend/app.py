@@ -22,9 +22,9 @@ from groq_client import client, get_groq_response, nlp_model
 def uniqid(prefix="", more_entropy=False):
     """Mimic PHP's uniqid(true) using time-based microseconds"""
     mtime = time.time()  # current time (float seconds)
-    uniq = f"{prefix}{int(mtime * 1000000):x}"  # microseconds → hex string
-    if more_entropy:
-        uniq += f"{hashlib.md5(str(mtime).encode()).hexdigest()[:8]}"
+    uniq = f"{prefix}{int(mtime * 1000):x}"  # microseconds → hex string
+    # if more_entropy:
+    #     uniq += f"{hashlib.md5(str(mtime).encode()).hexdigest()[:8]}"
     return uniq
 
 
@@ -82,7 +82,7 @@ def analyze_resume():
     _, file_extension = os.path.splitext(resume_file.filename)
     file_extension = file_extension.lstrip('.')  # remove leading dot
     unique_id = uniqid(more_entropy=True)
-    encrypted_filename = f"{first_name}{unique_id}{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
+    encrypted_filename = f"{first_name}_{unique_id}_{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
 
 
     # --- Check if record exists for user ---
