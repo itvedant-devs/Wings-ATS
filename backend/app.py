@@ -22,8 +22,6 @@ def uniqid(prefix="", more_entropy=False):
     """Mimic PHP's uniqid(true) using time-based microseconds"""
     mtime = time.time()  # current time (float seconds)
     uniq = f"{prefix}{int(mtime * 1000):x}"  # microseconds → hex string
-    # if more_entropy:
-    #     uniq += f"{hashlib.md5(str(mtime).encode()).hexdigest()[:8]}"
     return uniq
 
 
@@ -83,11 +81,8 @@ def analyze_resume():
     unique_id = uniqid(more_entropy=True)
     encrypted_filename = f"{first_name}_{unique_id}_{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
 
+    existing_entry = Meta.query.filter_by(key=user_id, type="users").first()
 
-    # --- Check if record exists for user ---
-    existing_entry = Meta.query.filter_by(
-        key=user_id, type="users", sub_type="resume_analysis_results"
-    ).first()
 
     existing_value = []
     if existing_entry:
@@ -105,6 +100,8 @@ def analyze_resume():
 
                 # --- Update DB (reorder queue) ---
                 existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
+                existing_entry.sub_type = "resume_analysis_results"  # ✅ ensure correct sub_type
+
                 db.session.commit()
 
                 
