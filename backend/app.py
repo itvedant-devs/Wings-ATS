@@ -107,6 +107,7 @@ def analyze_resume():
 
                 # Return stored score & analysis, DO NOT push duplicate
                 return jsonify({
+                    "normalized_text" : normalized_text, 
                     "duplicate": True,
                     "index": i,
                     "ackend_message": "This resume has already been analyzed (same content).",
@@ -114,6 +115,7 @@ def analyze_resume():
                     "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
+                    "file_name": resume_file.filename,
                     "encrypted_file_name": record.get("encrypted_file_name"),  # ✅ include here
                     "total_stored": len(existing_value),
                     
@@ -179,6 +181,7 @@ def analyze_resume():
 
     # --- Return latest analysis result ---
     return jsonify({
+        "normalized_text" : normalized_text, 
         "duplicate": False,
         "backend_message": "New resume analyzed successfully.",
         "analysis_results": response_content,
@@ -186,6 +189,7 @@ def analyze_resume():
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
+        "file_name": resume_file.filename,
         "encrypted_file_name": encrypted_filename  # ✅ included in response
         
     })
