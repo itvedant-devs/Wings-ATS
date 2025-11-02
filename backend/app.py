@@ -109,7 +109,7 @@ def analyze_resume():
                 return jsonify({
                     "duplicate": True,
                     "index": i,
-                    "message": "This resume has already been analyzed (same content).",
+                    "ackend_message": "This resume has already been analyzed (same content).",
                     "analysis_results": record.get("analysis_results"),
                     "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
@@ -180,7 +180,7 @@ def analyze_resume():
     # --- Return latest analysis result ---
     return jsonify({
         "duplicate": False,
-        "message": "New resume analyzed successfully.",
+        "backend_message": "New resume analyzed successfully.",
         "analysis_results": response_content,
         "structured_findings": structured_findings,
         "score": response_json.get("score", 0),
