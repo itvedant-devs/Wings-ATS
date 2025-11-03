@@ -55,6 +55,17 @@ def analyze_resume():
     resume_file = request.files['resume']
     if not resume_file.filename:
         return jsonify({"error": "No selected file"}), 400
+    
+
+    # --- Get file size ---
+    # --- Get file size in MB ---
+    resume_file.seek(0, os.SEEK_END)  # move cursor to end of file
+    file_size_bytes = resume_file.tell()  # get file size in bytes
+    resume_file.seek(0)  # reset cursor to start
+    file_size = round(file_size_bytes / (1024 * 1024), 2)  # convert to MB (2 decimal places)
+
+
+
 
     # Optional: get job role and description if provided
     target_job_role = request.form.get('target_job_role', '').strip()
@@ -117,6 +128,8 @@ def analyze_resume():
                     "file_name": resume_file.filename,
                     "encrypted_file_name": record.get("encrypted_file_name"),  # ✅ include here
                     "total_stored": len(existing_value),
+                    "file_size": file_size  # ✅ Added field
+
                     
                 })
 
@@ -189,7 +202,8 @@ def analyze_resume():
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
         "file_name": resume_file.filename,
-        "encrypted_file_name": encrypted_filename  # ✅ included in response
+        "encrypted_file_name": encrypted_filename,  # ✅ included in response
+        "file_size": file_size  # ✅ Added field
         
     })
 
