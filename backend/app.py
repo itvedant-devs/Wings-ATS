@@ -110,7 +110,7 @@ def analyze_resume():
                     "normalized_text" : normalized_text, 
                     "duplicate": True,
                     "index": i,
-                    "ackend_message": "This resume has already been analyzed (same content).",
+                    "backend_message": "This resume has already been analyzed (same content).",
                     "analysis_results": record.get("analysis_results"),
                     "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
