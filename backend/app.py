@@ -57,16 +57,12 @@ def analyze_resume():
     if not resume_file.filename:
         return jsonify({"error": "No selected file"}), 400
     
-
     # --- Get file size ---
-    # --- Get file size in MB ---
+    # --- Get file size in KB ---
     resume_file.seek(0, os.SEEK_END)  # move cursor to end of file
-    file_size_bytes = resume_file.tell()  # get file size in bytes
-    resume_file.seek(0)  # reset cursor to start
-    file_size = round(file_size_bytes / (1024 * 1024), 2)  # convert to MB (2 decimal places)
-
-
-
+    file_size_bytes = resume_file.tell()  # get current position (file size in bytes)
+    resume_file.seek(0)  # reset cursor to start for further reading
+    file_size = round(file_size_bytes / 1024, 2)  # convert to KB (2 decimal places)
 
     # Optional: get job role and description if provided
     target_job_role = request.form.get('target_job_role', '').strip()
