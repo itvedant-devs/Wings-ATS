@@ -32,6 +32,25 @@ def extract_text_from_file(file_object):
         return None
     return text.strip() if text else ""
 
+
+def contains_emoji(text):
+    """Checks if text contains any emoji."""
+    emoji_pattern = re.compile(
+        "["                       
+        "\U0001F600-\U0001F64F"   # emoticons
+        "\U0001F300-\U0001F5FF"   # symbols & pictographs
+        "\U0001F680-\U0001F6FF"   # transport & map symbols
+        "\U0001F1E0-\U0001F1FF"   # flags
+        # "\U00002700-\U000027BF"   # dingbats
+        "\U0001F900-\U0001F9FF"   # supplemental symbols
+        "\U0001FA70-\U0001FAFF"   # extended pictographs
+        "\U00002600-\U000026FF"   # misc symbols
+        "]+", flags=re.UNICODE
+    )
+    return bool(emoji_pattern.search(text))
+
+
+
 def validate_resume_content(text):
     if not text or len(text.split()) < 50:
         return False, "The uploaded file seems too short to be a valid resume."
@@ -39,6 +58,14 @@ def validate_resume_content(text):
     common_headers = ["education", "experience", "skills", "summary", "projects", "certifications"]
     found_sections = [hdr for hdr in common_headers if hdr in text.lower()]
 
+
+    if contains_emoji(text):
+        return False, "The uploaded resume contains emojis. Please upload a text-only resume."
+
+
     if len(found_sections) < 2:
         return False, "The uploaded file does not appear to contain typical resume sections."
+    
     return True, "Resume content looks valid."
+
+
