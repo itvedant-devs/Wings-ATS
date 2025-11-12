@@ -57,14 +57,12 @@ def validate_resume_content(text):
     common_headers = ["education", "experience", "skills", "summary", "projects", "certifications"]
     found_sections = [hdr for hdr in common_headers if hdr in text.lower()]
 
-
-    if contains_emoji(text):
-        return False, "The uploaded resume contains emojis. Please upload a text-only resume."
-
-
     if len(found_sections) < 2:
         return False, "The uploaded file does not appear to contain typical resume sections."
     
+    if contains_emoji(text):
+        return False, "The uploaded resume contains emojis. Please upload a text-only resume."
+
     return True, "Resume content looks valid."
 
 
