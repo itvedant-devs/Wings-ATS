@@ -74,7 +74,7 @@ def analyze_resume():
     # --- Extract and normalize resume text ---
     file_text = extract_text_from_file(resume_file)
     if not file_text:
-        return jsonify({"error": "Failed to extract text from resume"}), 500
+        return jsonify({"error": "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."}), 500
 
     normalized_text = re.sub(r"\s+", " ", file_text.strip().lower())
 
@@ -82,8 +82,11 @@ def analyze_resume():
     # ✅ Fetch user's first name from DB
     user = User.query.filter_by(id=user_id).first()
     first_name = ""
-    if user and user.first_name:
+    last_name = ""
+
+    if user and user.first_name and user.last_name:
         first_name = re.sub(r"\s+", "", user.first_name).lower()
+        last_name = re.sub(r"\s+", "", user.last_name).lower()
 
     # ✅ Generate encrypted/unique resume file name
     # Get file extension safely
@@ -106,16 +109,6 @@ def analyze_resume():
         for i, record in enumerate(existing_value):
             if record.get("normalized_text") == normalized_text:
                 
-                # --- Move this record to the end (latest position) ---
-                # existing_value.append(existing_value.pop(i))
-
-                # # --- Update DB (reorder queue) ---
-                # existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
-                # existing_entry.sub_type = "resume_analysis_results"  # ✅ ensure correct sub_type
-
-                # db.session.commit()
-
-                # Return stored score & analysis, DO NOT push duplicate
                 return jsonify({
                     "normalized_text" : normalized_text, 
                     "duplicate": True,
@@ -134,7 +127,8 @@ def analyze_resume():
                 })
 
     # --- Validate resume ---
-    is_valid, validation_message = validate_resume_content(file_text)
+    # is_valid, validation_message = validate_resume_content(file_text,first_name,last_name)
+    is_valid, validation_message = validate_resume_content(normalized_text,first_name,last_name)
     if not is_valid:
         return jsonify({"error": validation_message}), 400
 
@@ -159,37 +153,6 @@ def analyze_resume():
         response_json = json.loads(response_content)
     except json.JSONDecodeError:
         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
-
-    # --- Build JSON payload ---
-    # response_payload = {
-    #     "normalized_text": normalized_text,
-    #     "analysis_results": response_content,
-    #     "structured_findings": structured_findings,
-    #     "file_name": resume_file.filename,
-    #     "encrypted_file_name": encrypted_filename,  # ✅ new field
-    #     "score": response_json.get("score", 0),
-    #     "quick_fixes": response_json.get("quick_fixes", [])
-    # }
-
-    # --- Append new record and maintain max 10 (FIFO) ---
-    # existing_value.append(response_payload)
-    # if len(existing_value) > 10:
-    #     existing_value = existing_value[-10:]  # keep only latest 10
-
-    # --- Save to DB ---
-    # if existing_entry:
-    #     existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
-    # else:
-    #     new_entry = Meta(
-    #         key=user_id,
-    #         value=json.dumps(existing_value, ensure_ascii=False),
-    #         type="users",
-    #         sub_type="resume_analysis_results"
-    #     )
-    #     db.session.add(new_entry)
-
-    # db.session.commit()
-    
 
     # --- Return latest analysis result ---
     return jsonify({
