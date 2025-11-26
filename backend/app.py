@@ -82,7 +82,7 @@ def analyze_resume():
 
 
 
-    # ✅ Fetch user's first name from DB
+    #  Fetch user's first name from DB
     user = User.query.filter_by(id=user_id).first()
     first_name = ""
     # last_name = ""
@@ -92,7 +92,7 @@ def analyze_resume():
         first_name = re.sub(r"\s+", "", user.first_name).lower()
         # last_name = re.sub(r"\s+", "", user.last_name).lower()
 
-    # ✅ Generate encrypted/unique resume file name
+    #  Generate encrypted/unique resume file name
     # Get file extension safely
     _, file_extension = os.path.splitext(resume_file.filename)
     file_extension = file_extension.lstrip('.')  # remove leading dot
@@ -109,7 +109,7 @@ def analyze_resume():
         except Exception:
             existing_value = []
 
-        # ✅ Check if same resume already exists
+        #  Check if same resume already exists
         for i, record in enumerate(existing_value):
             if record.get("resume_hash") == resume_hash:
                 
@@ -124,9 +124,9 @@ def analyze_resume():
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": record.get("encrypted_file_name"),  # ✅ include here
+                    "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
-                    "file_size": file_size  # ✅ Added field
+                    "file_size": file_size  # Added field
 
     
                 })
@@ -193,27 +193,27 @@ def analyze_resume():
         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
 
 
-    new_record = {
-        "normalized_text": normalized_text,
-        "analysis_results": response_content,
-        "structured_findings": structured_findings,
-        "score": response_json.get("score", 0),
-        "quick_fixes": response_json.get("quick_fixes", []),
-        "file_name": resume_file.filename,
-        "encrypted_file_name": encrypted_filename,
-        "resume_hash": resume_hash
-    }
+    # new_record = {
+    #     "normalized_text": normalized_text,
+    #     "analysis_results": response_content,
+    #     "structured_findings": structured_findings,
+    #     "score": response_json.get("score", 0),
+    #     "quick_fixes": response_json.get("quick_fixes", []),
+    #     "file_name": resume_file.filename,
+    #     "encrypted_file_name": encrypted_filename,
+    #     "resume_hash": resume_hash
+    # }
 
-    existing_value.append(new_record)
+    # existing_value.append(new_record)
 
-    if existing_entry:
-        existing_entry.value = json.dumps(existing_value)
-    else:
-        new_entry = Meta(key=user_id, type="users", value=json.dumps(existing_value))
-        db.session.add(new_entry)
-        print("add new data in db")
+    # if existing_entry:
+    #     existing_entry.value = json.dumps(existing_value)
+    # else:
+    #     new_entry = Meta(key=user_id, type="users", value=json.dumps(existing_value))
+    #     db.session.add(new_entry)
+    #     print("add new data in db")
 
-    db.session.commit()
+    # db.session.commit()
 
 
 
@@ -228,8 +228,8 @@ def analyze_resume():
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
         "file_name": resume_file.filename,
-        "encrypted_file_name": encrypted_filename,  # ✅ included in response
-        "file_size": file_size,  # ✅ Added field
+        "encrypted_file_name": encrypted_filename,  #  included in response
+        "file_size": file_size,  # Added field
         "resume_hash": resume_hash
 
     })
