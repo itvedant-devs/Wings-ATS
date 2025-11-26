@@ -50,7 +50,7 @@ def contains_emoji(text):
 
 
 
-def validate_resume_content(text,first_name,last_name):
+def validate_resume_content(text):
     if not text or len(text.split()) < 50:
         return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
 
@@ -65,8 +65,8 @@ def validate_resume_content(text,first_name,last_name):
     if len(found_sections) < 2:
         return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
     
-    if first_name and last_name:
-        if first_name not in text.lower() or last_name not in text.lower():
-            return False, "The resume is missing your full name. Please ensure both your first and last name are included."
+    # if first_name and last_name:
+    #     if first_name not in text.lower() or last_name not in text.lower():
+    #         return False, "The resume is missing your full name. Please ensure both your first and last name are included."
 
     return True, "Resume content looks valid."
