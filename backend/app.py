@@ -287,7 +287,7 @@ def analyze_resume():
 
         # ✅ Check if same resume already exists
         for i, record in enumerate(existing_value):
-            if record.get("normalized_text") == normalized_text:
+            if record.get("resume_hash") == resume_hash:
                 
                 return jsonify({
                     "normalized_text" : normalized_text, 
@@ -304,7 +304,7 @@ def analyze_resume():
                     "total_stored": len(existing_value),
                     "file_size": file_size  # ✅ Added field
 
-                    
+    
                 })
 
 
@@ -316,14 +316,15 @@ def analyze_resume():
         except Exception:
             continue
         for idx, rec in enumerate(value_list):
-            rec_normalized_text = rec.get("normalized_text", "")
-            rec_hash = hashlib.sha256(rec_normalized_text.encode()).hexdigest()
-            if rec_hash == resume_hash:
+            # rec_normalized_text = rec.get("normalized_text", "")
+            # rec_hash = hashlib.sha256(rec_normalized_text.encode()).hexdigest()
+            stored_hash = rec.get("resume_hash") 
+            if stored_hash and stored_hash == resume_hash:
                 # Found globally duplicate resume
                 return jsonify({
                     "normalized_text": normalized_text,
                     "resume_hash": resume_hash,
-                    "duplicate": False,
+                    "duplicate": True,
                     "global_duplicate": True,
                     "matched_user_id": entry.key,
                     "matched_index": idx,
@@ -340,8 +341,8 @@ def analyze_resume():
 
 
     # --- Validate resume ---
-    # is_valid, validation_message = validate_resume_content(file_text,first_name,last_name)
-    is_valid, validation_message = validate_resume_content(file_text)
+    # is_valid, validation_message = validate_resume_content(normalized_text,first_name,last_name)
+    is_valid, validation_message = validate_resume_content(normalized_text)
     if not is_valid:
         return jsonify({"error": validation_message}), 400
 
