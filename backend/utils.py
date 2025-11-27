@@ -52,19 +52,21 @@ def contains_emoji(text):
 
 def validate_resume_content(text):
     if not text or len(text.split()) < 50:
-        return False, "The uploaded file seems too short to be a valid resume."
+        return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
 
     common_headers = ["education", "experience", "skills", "summary", "projects", "certifications"]
     found_sections = [hdr for hdr in common_headers if hdr in text.lower()]
 
 
     if contains_emoji(text):
-        return False, "The uploaded resume contains emojis. Please upload a text-only resume."
+        return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
 
 
     if len(found_sections) < 2:
-        return False, "The uploaded file does not appear to contain typical resume sections."
+        return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
     
+    # if first_name and last_name:
+    #     if first_name not in text.lower() or last_name not in text.lower():
+    #         return False, "The resume is missing your full name. Please ensure both your first and last name are included."
+
     return True, "Resume content looks valid."
-
-

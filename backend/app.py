@@ -1,4 +1,5 @@
-# import hashlib
+# 
+import hashlib
 import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -71,24 +72,29 @@ def analyze_resume():
     # --- Extract and normalize resume text ---
     file_text = extract_text_from_file(resume_file)
     if not file_text:
-        return jsonify({"error": "Failed to extract text from resume"}), 500
+        return jsonify({"error": "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."}), 500
 
     normalized_text = re.sub(r"\s+", " ", file_text.strip().lower())
+    resume_hash = hashlib.sha256(normalized_text.encode()).hexdigest()
 
 
-    # ✅ Fetch user's first name from DB
+
+    #  Fetch user's first name from DB
     user = User.query.filter_by(id=user_id).first()
     first_name = ""
+    # last_name = ""
+
+    # if user and user.first_name and user.last_name:
     if user and user.first_name:
         first_name = re.sub(r"\s+", "", user.first_name).lower()
+        # last_name = re.sub(r"\s+", "", user.last_name).lower()
 
-    # ✅ Generate encrypted/unique resume file name
+    #  Generate encrypted/unique resume file name
     # Get file extension safely
     _, file_extension = os.path.splitext(resume_file.filename)
     file_extension = file_extension.lstrip('.')  # remove leading dot
     unique_id = uniqid(more_entropy=True)
     encrypted_filename = f"{first_name}_{unique_id}_{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
-
     existing_entry = Meta.query.filter_by(key=user_id, type="users").first()
 
 
@@ -99,39 +105,50 @@ def analyze_resume():
         except Exception:
             existing_value = []
 
-        # ✅ Check if same resume already exists
+        #  Check if same resume already exists
         for i, record in enumerate(existing_value):
-            if record.get("normalized_text") == normalized_text:
+            if record.get("resume_hash") == resume_hash:
                 
-                # --- Move this record to the end (latest position) ---
-                # existing_value.append(existing_value.pop(i))
-
-                # # --- Update DB (reorder queue) ---
-                # existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
-                # existing_entry.sub_type = "resume_analysis_results"  # ✅ ensure correct sub_type
-
-                # db.session.commit()
-
-                # Return stored score & analysis, DO NOT push duplicate
                 return jsonify({
-                    "normalized_text" : normalized_text, 
+                    "resume_hash": resume_hash,
                     "duplicate": True,
-                    "index": i,
                     "backend_message": "This resume has already been analyzed (same content).",
-                    "analysis_results": record.get("analysis_results"),
-                    "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": record.get("encrypted_file_name"),  # ✅ include here
+                    "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
-                    "file_size": file_size  # ✅ Added field
-
-                    
+                    "file_size": file_size  # Added field
                 })
 
+
+    # --------- validate global resume
+    all_entries = Meta.query.filter_by(type="users").all()
+    for entry in all_entries:
+        try:
+            value_list = json.loads(entry.value)
+        except Exception:
+            continue
+        for idx, rec in enumerate(value_list):
+            stored_hash = rec.get("resume_hash") 
+            if stored_hash and stored_hash == resume_hash:
+                # Found globally duplicate resume
+                return jsonify({
+                    "resume_hash": resume_hash,
+                    "duplicate": True,
+                    "global_duplicate": True,
+                    "message": "This resume has already been analyzed globally.",
+                    "score": rec.get("score"),
+                    "quick_fixes": rec.get("quick_fixes"),
+                    "file_name": resume_file.filename,
+                    "encrypted_file_name": rec.get("encrypted_file_name"),
+                    "file_size": file_size
+                })
+
+
     # --- Validate resume ---
-    is_valid, validation_message = validate_resume_content(file_text)
+    # is_valid, validation_message = validate_resume_content(normalized_text,first_name,last_name)
+    is_valid, validation_message = validate_resume_content(normalized_text)
     if not is_valid:
         return jsonify({"error": validation_message}), 400
 
@@ -157,51 +174,20 @@ def analyze_resume():
     except json.JSONDecodeError:
         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
 
-    # --- Build JSON payload ---
-    # response_payload = {
-    #     "normalized_text": normalized_text,
-    #     "analysis_results": response_content,
-    #     "structured_findings": structured_findings,
-    #     "file_name": resume_file.filename,
-    #     "encrypted_file_name": encrypted_filename,  # ✅ new field
-    #     "score": response_json.get("score", 0),
-    #     "quick_fixes": response_json.get("quick_fixes", [])
-    # }
-
-    # --- Append new record and maintain max 10 (FIFO) ---
-    # existing_value.append(response_payload)
-    # if len(existing_value) > 10:
-    #     existing_value = existing_value[-10:]  # keep only latest 10
-
-    # --- Save to DB ---
-    # if existing_entry:
-    #     existing_entry.value = json.dumps(existing_value, ensure_ascii=False)
-    # else:
-    #     new_entry = Meta(
-    #         key=user_id,
-    #         value=json.dumps(existing_value, ensure_ascii=False),
-    #         type="users",
-    #         sub_type="resume_analysis_results"
-    #     )
-    #     db.session.add(new_entry)
-
-    # db.session.commit()
-    
-
     # --- Return latest analysis result ---
     return jsonify({
         "normalized_text" : normalized_text, 
         "duplicate": False,
         "backend_message": "New resume analyzed successfully.",
         "analysis_results": response_content,
-        "structured_findings": structured_findings,
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
         "file_name": resume_file.filename,
-        "encrypted_file_name": encrypted_filename,  # ✅ included in response
-        "file_size": file_size  # ✅ Added field
-        
+        "encrypted_file_name": encrypted_filename,  #  included in response
+        "file_size": file_size,  # Added field
+        "resume_hash": resume_hash
+
     })
 
 
