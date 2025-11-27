@@ -67,7 +67,6 @@ def analyze_resume():
 
 
 
-
     # Optional: get job role and description if provided
     target_job_role = request.form.get('target_job_role', '').strip()
     job_description = request.form.get('job_description', '').strip()
@@ -114,21 +113,16 @@ def analyze_resume():
             if record.get("resume_hash") == resume_hash:
                 
                 return jsonify({
-                    "normalized_text" : normalized_text, 
                     "resume_hash": resume_hash,
                     "duplicate": True,
                     "index": i,
                     "message": "This resume has already been analyzed (same content).",
-                    "analysis_results": record.get("analysis_results"),
-                    "structured_findings": record.get("structured_findings"),
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
                     "file_name": resume_file.filename,
                     "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
                     "file_size": file_size  # Added field
-
-    
                 })
 
 
@@ -140,22 +134,14 @@ def analyze_resume():
         except Exception:
             continue
         for idx, rec in enumerate(value_list):
-            # rec_normalized_text = rec.get("normalized_text", "")
-            # rec_hash = hashlib.sha256(rec_normalized_text.encode()).hexdigest()
             stored_hash = rec.get("resume_hash") 
             if stored_hash and stored_hash == resume_hash:
                 # Found globally duplicate resume
                 return jsonify({
-                    "normalized_text": normalized_text,
                     "resume_hash": resume_hash,
                     "duplicate": True,
                     "global_duplicate": True,
-                    "matched_user_id": entry.key,
-                    "matched_index": idx,
-                    "matched_record": rec,
                     "message": "This resume has already been analyzed globally.",
-                    "analysis_results": rec.get("analysis_results"),
-                    "structured_findings": rec.get("structured_findings"),
                     "score": rec.get("score"),
                     "quick_fixes": rec.get("quick_fixes"),
                     "file_name": resume_file.filename,
@@ -192,38 +178,12 @@ def analyze_resume():
     except json.JSONDecodeError:
         response_json = {"score": 0, "quick_fixes": [], "raw_text": response_content}
 
-
-    # new_record = {
-    #     "normalized_text": normalized_text,
-    #     "analysis_results": response_content,
-    #     "structured_findings": structured_findings,
-    #     "score": response_json.get("score", 0),
-    #     "quick_fixes": response_json.get("quick_fixes", []),
-    #     "file_name": resume_file.filename,
-    #     "encrypted_file_name": encrypted_filename,
-    #     "resume_hash": resume_hash
-    # }
-
-    # existing_value.append(new_record)
-
-    # if existing_entry:
-    #     existing_entry.value = json.dumps(existing_value)
-    # else:
-    #     new_entry = Meta(key=user_id, type="users", value=json.dumps(existing_value))
-    #     db.session.add(new_entry)
-    #     print("add new data in db")
-
-    # db.session.commit()
-
-
-
     # --- Return latest analysis result ---
     return jsonify({
         "normalized_text" : normalized_text, 
         "duplicate": False,
         "message": "New resume analyzed successfully.",
         "analysis_results": response_content,
-        "structured_findings": structured_findings,
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
