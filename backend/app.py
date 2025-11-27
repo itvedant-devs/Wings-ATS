@@ -97,7 +97,6 @@ def analyze_resume():
     file_extension = file_extension.lstrip('.')  # remove leading dot
     unique_id = uniqid(more_entropy=True)
     encrypted_filename = f"{first_name}_{unique_id}_{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
-
     existing_entry = Meta.query.filter_by(key=user_id, type="users").first()
 
 
@@ -196,8 +195,3 @@ def analyze_resume():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-
-
-
-
-
