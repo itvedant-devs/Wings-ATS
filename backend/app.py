@@ -1,4 +1,4 @@
-# 
+
 import hashlib
 import time
 from flask import Flask, request, jsonify
@@ -16,6 +16,19 @@ from utils import (
 )
 from analysis import perform_structured_analysis
 from groq_client import client, get_groq_response, nlp_model
+
+
+def _normalize_record(record):
+    """Ensure resume metadata is a dict regardless of how it was stored."""
+    if isinstance(record, dict):
+        return record
+    if isinstance(record, str):
+        try:
+            decoded = json.loads(record)
+        except json.JSONDecodeError:
+            return None
+        return decoded if isinstance(decoded, dict) else None
+    return None
 
 
 
@@ -107,16 +120,19 @@ def analyze_resume():
 
         #  Check if same resume already exists
         for i, record in enumerate(existing_value):
-            if record.get("resume_hash") == resume_hash:
+            rec_dict = _normalize_record(record)
+            if not rec_dict:
+                continue
+            if rec_dict.get("resume_hash") == resume_hash:
                 
                 return jsonify({
                     "resume_hash": resume_hash,
                     "duplicate": True,
                     "backend_message": "This resume has already been analyzed (same content).",
-                    "score": record.get("score"),
-                    "quick_fixes": record.get("quick_fixes"),
+                    "score": rec_dict.get("score"),
+                    "quick_fixes": rec_dict.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
+                    "encrypted_file_name": rec_dict.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
                     "file_size": file_size  # Added field
                 })
@@ -130,7 +146,10 @@ def analyze_resume():
         except Exception:
             continue
         for idx, rec in enumerate(value_list):
-            stored_hash = rec.get("resume_hash") 
+            rec_dict = _normalize_record(rec)
+            if not rec_dict:
+                continue
+            stored_hash = rec_dict.get("resume_hash") 
             if stored_hash and stored_hash == resume_hash:
                 # Found globally duplicate resume
                 return jsonify({
@@ -138,10 +157,10 @@ def analyze_resume():
                     "duplicate": True,
                     "global_duplicate": True,
                     "message": "This resume has already been analyzed globally.",
-                    "score": rec.get("score"),
-                    "quick_fixes": rec.get("quick_fixes"),
+                    "score": rec_dict.get("score"),
+                    "quick_fixes": rec_dict.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": rec.get("encrypted_file_name"),
+                    "encrypted_file_name": rec_dict.get("encrypted_file_name"),
                     "file_size": file_size
                 })
 
@@ -193,6 +212,3 @@ def analyze_resume():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
-
-
-
