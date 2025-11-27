@@ -115,7 +115,6 @@ def analyze_resume():
                 return jsonify({
                     "resume_hash": resume_hash,
                     "duplicate": True,
-                    "index": i,
                     "message": "This resume has already been analyzed (same content).",
                     "score": record.get("score"),
                     "quick_fixes": record.get("quick_fixes"),
