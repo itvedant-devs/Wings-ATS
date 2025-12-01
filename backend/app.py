@@ -1,13 +1,12 @@
-import hashlib
-import time
+# new code ---------------------------------------------------------------------------------
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.datastructures import FileStorage
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 import os, json, re
-import pymysql
-pymysql.install_as_MySQLdb()
+import pymysql   # 👈 Add this
+pymysql.install_as_MySQLdb()  # 👈 And 
 from config import Config
 from models import db, Meta, User
 from utils import (
@@ -179,20 +178,12 @@ def analyze_resume():
             stored_hash = rec_dict.get("resume_hash") 
             if stored_hash and stored_hash == resume_hash:
                 return jsonify({
-                    "resume_hash": resume_hash,
-                    "duplicate": True,
-                    "global_duplicate": True,
-                    "message": "This resume has already been analyzed globally.",
-                    "score": rec_dict.get("score"),
-                    "quick_fixes": rec_dict.get("quick_fixes"),
-                    "file_name": resume_file.filename,
-                    # OVERRIDE: Return current uploaded filename instead of stored encrypted name
-                    "encrypted_file_name": resume_file.filename,
-                    "file_size": file_size,
-                    "user_name": user_full_name,
-                    "first_name": raw_first,
-                    "last_name": raw_last,
-                    "user_id": user_id
+                    "backend_message": "This resume has already been analyzed (same content).",
+                    "analysis_results": record.get("analysis_results"),
+                    "structured_findings": record.get("structured_findings"),
+                    "score": record.get("score"),
+                    "quick_fixes": record.get("quick_fixes"),
+                    "total_stored": len(existing_value)
                 })
 
     # 8. Validation
@@ -244,8 +235,6 @@ def analyze_resume():
 
     # 11. Final Success Response
     return jsonify({
-        "normalized_text" : normalized_text, 
-        "duplicate": False,
         "backend_message": "New resume analyzed successfully.",
         "analysis_results": response_content,
         "score": response_json.get("score", 0),
@@ -263,3 +252,6 @@ def analyze_resume():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
+
+
+
