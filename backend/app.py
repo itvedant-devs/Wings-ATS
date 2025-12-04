@@ -119,7 +119,7 @@ def analyze_resume():
             existing_value = []
 
         #  Check if same resume already exists
-        for i, record in enumerate(existing_value):
+        for record in existing_value:
             rec_dict = _normalize_record(record)
             if not rec_dict:
                 continue
@@ -145,7 +145,7 @@ def analyze_resume():
             value_list = json.loads(entry.value)
         except Exception:
             continue
-        for idx, rec in enumerate(value_list):
+        for rec in value_list:
             rec_dict = _normalize_record(rec)
             if not rec_dict:
                 continue
