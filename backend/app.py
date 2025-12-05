@@ -40,6 +40,13 @@ def uniqid(prefix="", more_entropy=False):
     return uniq
 
 
+def safe_load_json(value):
+    try:
+        data = json.loads(value)
+        return data if isinstance(data, list) else []
+    except:
+        return []
+
 # --- Flask App Setup ---
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -108,22 +115,16 @@ def analyze_resume():
     file_extension = file_extension.lstrip('.')  # remove leading dot
     unique_id = uniqid(more_entropy=True)
     encrypted_filename = f"{first_name}_{unique_id}_{user_id}.{file_extension}" if first_name else f"{unique_id}{user_id}.{file_extension}"
+    
+    
+
+    
     existing_entry = Meta.query.filter_by(key=user_id, type="users").first()
-
-
-    existing_value = []
+    existing_value = safe_load_json(existing_entry.value) if existing_entry else []
     if existing_entry:
-        try:
-            existing_value = json.loads(existing_entry.value)
-        except Exception:
-            existing_value = []
-
         #  Check if same resume already exists
-        for record in existing_value:
-            rec_dict = _normalize_record(record)
-            if not rec_dict:
-                continue
-            if rec_dict.get("resume_hash") == resume_hash:
+        for  record in existing_value:
+            if record.get("resume_hash") == resume_hash:
                 
                 return jsonify({
                     "resume_hash": resume_hash,
@@ -141,18 +142,9 @@ def analyze_resume():
     # --------- validate global resume
     all_entries = Meta.query.filter_by(type="users").all()
     for entry in all_entries:
-        try:
-            value_list = json.loads(entry.value)
-            if not isinstance(value_list, list):
-                continue
-        except Exception:
-            continue
-
+        value_list = safe_load_json(entry.value)
         for rec in value_list:
-            rec_dict = _normalize_record(rec)
-            if not rec_dict:
-                continue
-            stored_hash = rec_dict.get("resume_hash") 
+            stored_hash = rec.get("resume_hash") 
             if stored_hash and stored_hash == resume_hash:
                 # Found globally duplicate resume
                 return jsonify({
