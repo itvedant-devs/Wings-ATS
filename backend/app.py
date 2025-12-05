@@ -130,10 +130,10 @@ def analyze_resume():
                     "resume_hash": resume_hash,
                     "duplicate": True,
                     "backend_message": "This resume has already been analyzed (same content).",
-                    "score": rec_dict.get("score"),
-                    "quick_fixes": rec_dict.get("quick_fixes"),
+                    "score": record.get("score"),
+                    "quick_fixes": record.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": rec_dict.get("encrypted_file_name"),  #  include here
+                    "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
                     "file_size": file_size  # Added field
                 })
@@ -152,10 +152,10 @@ def analyze_resume():
                     "duplicate": True,
                     "global_duplicate": True,
                     "message": "This resume has already been analyzed globally.",
-                    "score": rec_dict.get("score"),
-                    "quick_fixes": rec_dict.get("quick_fixes"),
+                    "score": rec.get("score"),
+                    "quick_fixes": rec.get("quick_fixes"),
                     "file_name": resume_file.filename,
-                    "encrypted_file_name": rec_dict.get("encrypted_file_name"),
+                    "encrypted_file_name": rec.get("encrypted_file_name"),
                     "file_size": file_size
                 })
 
