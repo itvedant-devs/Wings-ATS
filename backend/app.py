@@ -143,8 +143,11 @@ def analyze_resume():
     for entry in all_entries:
         try:
             value_list = json.loads(entry.value)
+            if not isinstance(value_list, list):
+                continue
         except Exception:
             continue
+
         for rec in value_list:
             rec_dict = _normalize_record(rec)
             if not rec_dict:
