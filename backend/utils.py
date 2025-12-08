@@ -61,7 +61,7 @@ def validate_resume_content(text):
         return False, "The uploaded file does not appear to contain typical resume sections."
     
     if contains_emoji(text):
-        return False, "We were unable to identify a resume in the uploaded file. Please ensure you have selected the correct document and upload it again."
+        return False, "It looks like the file contains emojis or unsupported symbols. Please remove emojis from the resume and upload file again."
 
 
     if len(found_sections) < 2:

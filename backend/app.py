@@ -193,7 +193,6 @@ def analyze_resume():
         "normalized_text" : normalized_text, 
         "duplicate": False,
         "backend_message": "New resume analyzed successfully.",
-        "analysis_results": response_content,
         "score": response_json.get("score", 0),
         "quick_fixes": response_json.get("quick_fixes", []),
         "total_stored": len(existing_value),
@@ -201,7 +200,6 @@ def analyze_resume():
         "encrypted_file_name": encrypted_filename,  #  included in response
         "file_size": file_size,  # Added field
         "resume_hash": resume_hash
-
     })
 
 
