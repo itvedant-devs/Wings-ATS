@@ -101,13 +101,21 @@ def analyze_resume():
 
     #  Fetch user's first name from DB
     user = User.query.filter_by(id=user_id).first()
-    first_name = ""
+    # first_name = ""
     # last_name = ""
 
     # if user and user.first_name and user.last_name:
-    if user and user.first_name:
-        first_name = re.sub(r"\s+", "", user.first_name).lower()
-        # last_name = re.sub(r"\s+", "", user.last_name).lower()
+    # if user and user.first_name:
+    #     first_name = re.sub(r"\s+", "", user.first_name).lower()
+    #     # last_name = re.sub(r"\s+", "", user.last_name).lower()
+
+    # Extract names, remove whitespace, convert to uppercase
+    first_name = re.sub(r"\s+", "", getattr(user, "first_name", "")).upper()
+    last_name = re.sub(r"\s+", "", getattr(user, "last_name", "")).upper()
+
+
+    # Build username
+    full_name = "_".join(filter(None, [first_name, last_name]))
 
     #  Generate encrypted/unique resume file name
     # Get file extension safely
@@ -135,7 +143,8 @@ def analyze_resume():
                     "file_name": resume_file.filename,
                     "encrypted_file_name": record.get("encrypted_file_name"),  #  include here
                     "total_stored": len(existing_value),
-                    "file_size": file_size  # Added field
+                    "file_size": file_size,  # Added field
+                    "resume_file_name": full_name
                 })
 
 
@@ -156,7 +165,8 @@ def analyze_resume():
                     "quick_fixes": rec.get("quick_fixes"),
                     "file_name": resume_file.filename,
                     "encrypted_file_name": rec.get("encrypted_file_name"),
-                    "file_size": file_size
+                    "file_size": file_size,
+                    "resume_file_name": full_name
                 })
 
 
@@ -199,7 +209,8 @@ def analyze_resume():
         "file_name": resume_file.filename,
         "encrypted_file_name": encrypted_filename,  #  included in response
         "file_size": file_size,  # Added field
-        "resume_hash": resume_hash
+        "resume_hash": resume_hash,
+        "resume_file_name": full_name
     })
 
 
