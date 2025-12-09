@@ -110,12 +110,12 @@ def analyze_resume():
     #     # last_name = re.sub(r"\s+", "", user.last_name).lower()
 
     # Extract names, remove whitespace, convert to uppercase
-    first_name = re.sub(r"\s+", "", getattr(user, "first_name", "")).upper()
-    last_name = re.sub(r"\s+", "", getattr(user, "last_name", "")).upper()
+    first_name = re.sub(r"\s+", "", getattr(user, "first_name", ""))
+    last_name = re.sub(r"\s+", "", getattr(user, "last_name", ""))
 
 
     # Build username
-    full_name = "_".join(filter(None, [first_name, last_name]))
+    full_name = "_".join(filter(None, [first_name, last_name])).upper()
 
     #  Generate encrypted/unique resume file name
     # Get file extension safely
